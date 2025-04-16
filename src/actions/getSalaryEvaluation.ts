@@ -1,17 +1,49 @@
+// @/actions/getSalaryEvaluation.ts
 'use server';
 
-import { ChatOpenAI } from "@langchain/openai";
-
-const openai = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  modelName: "gpt-4-turbo"
-});
-
-export async function getSalaryEvaluation(neto: number) {
+export async function getSalaryEvaluation(
+  neto: number,
+  onNewToken: (token: string) => void
+) {
   const prompt = `
-Loo lühike hinnang, kuidas on võimalik elada Eestis iga kuu ~${neto} euroga. Keskendu kodule, toidule ja elukvaliteedile. Arvesta, et Eesti keskmine netopalk on 1700 eurot. Hoia vastus lühem kui 400 karakterit.`;
+Loo lühike hinnang, kuidas on võimalik elada Eestis iga kuu ~${neto} euroga. 
+Keskendu kodule, toidule ja elukvaliteedile. Arvesta, et Eesti keskmine netopalk on 1700 eurot. 
+Hoia vastus lühem kui 400 karakterit.`;
 
-  const response = await openai.invoke(prompt);
+  // Call the OpenAI API directly with streaming enabled.
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: "gpt-4-turbo",
+      messages: [{ role: "user", content: prompt }],
+      stream: true,
+    }),
+  });
 
-  return response.content as string;
+  if (!res.body) {
+    throw new Error('No response body from OpenAI');
+  }
+
+  // Process the response stream.
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let done = false;
+  let fullText = "";
+
+  while (!done) {
+    const { value, done: doneReading } = await reader.read();
+    done = doneReading;
+    // Decode the current chunk.
+    const chunkValue = decoder.decode(value, { stream: true });
+    fullText += chunkValue;
+    // Pass this chunk to the callback.
+    onNewToken(chunkValue);
+  }
+
+  // Optionally, return the full accumulated text.
+  return fullText;
 }

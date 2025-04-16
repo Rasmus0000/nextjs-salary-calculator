@@ -20,8 +20,8 @@ This is a **Next.js** project that calculates salary in **Net**, **Gross**, or *
 
 1. **Clone the repository**
    ```bash
-   git clone
-   cd salary-calculator
+   git clone https://github.com/Rasmus0000/nextjs-salary-calculator
+   cd nextjs-salary-calculator
 2. **Install dependencies**
     ```bash
     npm install

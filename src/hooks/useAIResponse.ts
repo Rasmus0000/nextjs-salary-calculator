@@ -19,6 +19,7 @@ export const useAIResponse = (netSalary?: number) => {
       setAiResponse("");
       setLoading(true);
 
+      // Abort previous request if needed
       if (controllerRef.current) {
         controllerRef.current.abort();
       }
@@ -41,22 +42,27 @@ export const useAIResponse = (netSalary?: number) => {
         const reader = res.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let done = false;
+        let buffer = "";
 
         while (!done) {
           const { value, done: doneReading } = await reader.read();
           done = doneReading;
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+          // Append the new chunk to the buffer
+          buffer += chunk;
+          // Split buffer by newline to handle complete lines
+          const parts = buffer.split("\n");
+          // Keep the last (possibly incomplete) part in the buffer
+          buffer = parts.pop() || "";
 
-          for (const line of lines) {
+          // Process each complete line
+          for (const line of parts) {
             if (line.startsWith("data: ")) {
               const dataStr = line.slice(6).trim();
-              
               if (dataStr === "[DONE]") {
                 done = true;
                 break;
               }
-
               try {
                 const data = JSON.parse(dataStr);
                 const content = data?.choices?.[0]?.delta?.content;
@@ -70,6 +76,22 @@ export const useAIResponse = (netSalary?: number) => {
           }
         }
 
+        // Process any residual data in the buffer
+        if (buffer.trim().startsWith("data: ")) {
+          const dataStr = buffer.trim().slice(6).trim();
+          if (dataStr && dataStr !== "[DONE]") {
+            try {
+              const data = JSON.parse(dataStr);
+              const content = data?.choices?.[0]?.delta?.content;
+              if (content && requestCounter.current === thisRequest) {
+                setAiResponse((prev) => prev + content);
+              }
+            } catch (e) {
+              console.error("Invalid JSON in final buffer:", buffer, e);
+            }
+          }
+        }
+
         if (requestCounter.current === thisRequest) {
           lastQueriedNetSalary.current = current;
         }
@@ -77,8 +99,7 @@ export const useAIResponse = (netSalary?: number) => {
         if (error instanceof Error && error.name !== "AbortError") {
           console.error("Streaming error:", error);
         }
-      }
-      finally {
+      } finally {
         if (requestCounter.current === thisRequest) {
           setLoading(false);
         }

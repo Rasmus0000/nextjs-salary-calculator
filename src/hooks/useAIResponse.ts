@@ -19,7 +19,6 @@ export const useAIResponse = (netSalary?: number) => {
       setAiResponse("");
       setLoading(true);
 
-      // Abort any ongoing fetch
       if (controllerRef.current) {
         controllerRef.current.abort();
       }
@@ -53,7 +52,6 @@ export const useAIResponse = (netSalary?: number) => {
             if (line.startsWith("data: ")) {
               const dataStr = line.slice(6).trim();
               
-              // Check for the [DONE] token and stop streaming if it appears
               if (dataStr === "[DONE]") {
                 done = true;
                 break;

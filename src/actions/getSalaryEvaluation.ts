@@ -1,4 +1,3 @@
-// @/actions/getSalaryEvaluation.ts
 'use server';
 
 export async function getSalaryEvaluation(
@@ -10,7 +9,6 @@ Loo lühike hinnang, kuidas on võimalik elada Eestis iga kuu ~${neto} euroga.
 Keskendu kodule, toidule ja elukvaliteedile. Arvesta, et Eesti keskmine netopalk on 1700 eurot. 
 Hoia vastus lühem kui 400 karakterit.`;
 
-  // Call the OpenAI API directly with streaming enabled.
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -28,7 +26,6 @@ Hoia vastus lühem kui 400 karakterit.`;
     throw new Error('No response body from OpenAI');
   }
 
-  // Process the response stream.
   const reader = res.body.getReader();
   const decoder = new TextDecoder('utf-8');
   let done = false;
@@ -37,13 +34,10 @@ Hoia vastus lühem kui 400 karakterit.`;
   while (!done) {
     const { value, done: doneReading } = await reader.read();
     done = doneReading;
-    // Decode the current chunk.
     const chunkValue = decoder.decode(value, { stream: true });
     fullText += chunkValue;
-    // Pass this chunk to the callback.
     onNewToken(chunkValue);
   }
 
-  // Optionally, return the full accumulated text.
   return fullText;
 }

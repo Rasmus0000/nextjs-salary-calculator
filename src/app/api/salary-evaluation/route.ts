@@ -1,7 +1,6 @@
-// app/api/salary-evaluation/route.ts
 import { NextResponse } from "next/server";
 
-export const runtime = "edge"; // Use Edge runtime for streaming
+export const runtime = "edge";
 
 export async function POST(request: Request) {
   const { neto } = await request.json();
@@ -11,7 +10,6 @@ Keskendu kodule, toidule ja elukvaliteedile. Arvesta, et Eesti keskmine netopalk
 Hoia vastus lühem kui 400 karakterit.
 `;
 
-  // Call OpenAI's streaming endpoint
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -29,7 +27,6 @@ Hoia vastus lühem kui 400 karakterit.
     return new NextResponse("No response body", { status: 500 });
   }
 
-  // Return the response stream directly.
   return new NextResponse(res.body, {
     headers: {
       "Content-Type": "text/event-stream",

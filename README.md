@@ -32,6 +32,6 @@ This is a **Next.js** project that calculates salary in **Net**, **Gross**, or *
    ```bash
    cp .env.example .env.local
 
-4. **Clone the repository**
+4. **Add API key**
    open .env.local and add:
    OPENAI_API_KEY=your-openai-api-key
